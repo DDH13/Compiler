@@ -4,12 +4,18 @@
     #include <string.h>
     extern FILE* yyin;
     extern int yylex();
+    int DEBUGY = 1;
     
+    typedef union ValueUnion {
+        int int_value;
+        float float_value;
+    } ValueUnion;
+
     // a linked list of variable names and values
     typedef struct var {
         int type; //0 for int, 1 for float
         char* name;
-        float value;
+        ValueUnion value;
         struct var* next;
     } var;
 
@@ -17,11 +23,16 @@
     var* head = NULL;
 
     // a function to add a variable to the linked list
-    void add_var(char* name, float value, int type) {
+    void add_var(char* name, ValueUnion value, int type) {
         var* new_var = malloc(sizeof(var));
         new_var->name = malloc(strlen(name) + 1);
         strcpy(new_var->name, name);
-        new_var->value = value;
+        if (type == 0) {
+            new_var->value.int_value = (float)value.int_value;
+        }
+        else {
+            new_var->value.float_value = (int)value.float_value;
+        }
         new_var->type = type;
         new_var->next = head;
         head = new_var;
@@ -31,20 +42,21 @@
     void declare_var(char* name, char* type) {
         var* current = head;
         while (current != NULL) {
-            printf("comparing %s and %s\n", current->name, name);
+            // printf("comparing %s and %s\n", current->name, name);
             if (strcmp(current->name, name) == 0) {
                 printf("Error: variable %s already declared\n", name);
                 return;
             }
             current = current->next;
         }
+        ValueUnion tempstruct;
         if (strcmp(type, "int") == 0) {
-            add_var(name, 0, 0);
-            printf("added %s as %s\n", name, type);
+            tempstruct.int_value = -1;
+            add_var(name, tempstruct, 0);
         }
         else if (strcmp(type, "float") == 0) {
-            add_var(name, 0, 1);
-            printf("added %s as %s\n", name, type);
+            tempstruct.float_value = -1;
+            add_var(name, tempstruct, 1);
         }
         else {
             printf("Error: invalid type %s\n", type);
@@ -53,11 +65,16 @@
     }
     
     // a function to assign a value to a declared variable
-    int assign_var(char* name, float value) {
+    int assign_var(char* name, ValueUnion value) {
         var* current = head;
         while (current != NULL) {
             if (strcmp(current->name, name) == 0) {
-                current->value = value;
+                if (current->type == 0) {
+                    current->value.int_value = (int)value.int_value;
+                }
+                else if (current->type == 1) {
+                    current->value.float_value = (float)value.float_value;
+                }
                 return 0;
             }
             current = current->next;
@@ -67,7 +84,7 @@
     }
 
     // a function to get the value of a variable
-    float get_var(char* name) {
+    ValueUnion get_var(char* name) {
         var* current = head;
         while (current != NULL) {
             if (strcmp(current->name, name) == 0) {
@@ -75,7 +92,6 @@
             }
             current = current->next;
         }
-        return -1;
     }
 
     // a function to check if a variable is an int or a float
@@ -99,7 +115,12 @@
         }
         printf("name\tvalue\ttype\n");
         while (current != NULL) {
-            printf("%s\t%.2f\t%d\n", current->name, current->value, current->type);
+            if (current->type == 0) {
+                printf("%s\t%d\t%d\n", current->name, current->value.int_value, current->type);
+            }
+            else {
+                printf("%s\t%.2f\t%d\n", current->name, current->value.float_value, current->type);
+            }
             current = current->next;
         }
     }
@@ -131,83 +152,81 @@ Stmt:
     | FloatAssignStmt
     | FloatExpr
 
-DclStmt: TOK_TYPE TOK_ID TOK_SEMI{
-        printf("declaring %s as %s\n", $2, $1); 
+DclStmt: TOK_TYPE TOK_ID TOK_SEMI {
+    if(DEBUGY)printf("declaring %s as %s\n", $2, $1); 
         declare_var($2, $1); 
         print_list();
     }
-IntAssignStmt: TOK_ID TOK_EQ IntExpr TOK_SEMI{
-        if(get_type($1)==1)
-            {printf("Type Error");
-            return 1;}
-        printf("assigning %d to %s\n", $3, $1); 
-        assign_var($1, $3);
+IntAssignStmt: TOK_ID TOK_EQ IntExpr TOK_SEMI {
+        if(get_type($1)==1) {printf("Type Error");return 1;}
+        if(DEBUGY)printf("assigning %d to %s\n", $3, $1); 
+        ValueUnion tempstruct;
+        tempstruct.int_value = $3;
+        assign_var($1, tempstruct);
         print_list();
     }
-FloatAssignStmt: TOK_ID TOK_EQ FloatExpr TOK_SEMI{
-        if(get_type($1)==0)
-            {printf("Type Error");
-            return 1;}
-        printf("assigning %f to %s\n", $3, $1); 
-        assign_var($1, $3);
+FloatAssignStmt: TOK_ID TOK_EQ FloatExpr TOK_SEMI {
+        if(get_type($1)==0) {printf("Type Error");return 1;}
+        ValueUnion tempstruct;
+        tempstruct.float_value = $3;
+        if(DEBUGY)printf("assigning %f to %s\n", $3, $1); 
+        assign_var($1, tempstruct);
         print_list();
     }
 PrintStmt: TOK_PRINTVAR TOK_ID TOK_SEMI {
-        if(get_type($2)==1) printf("%f\n", get_var($2));
-        else printf("%d\n", (int)get_var($2));
+        if(get_type($2)==1) printf("%f\n", get_var($2).float_value);
+        else printf("%d\n", (int)get_var($2).int_value);
     }
 FloatExpr: 
     FloatExpr TOK_ADD FloatExpr  {
-        printf("adding %f and %f\n", $1, $3); 
+        if(DEBUGY)printf("adding %f and %f\n", $1, $3); 
         $$ = $1 + $3;
     }
     | FloatExpr TOK_SUB FloatExpr  {
-        printf("subtracting %f and %f\n", $1, $3); 
+        if(DEBUGY)printf("subtracting %f and %f\n", $1, $3); 
         $$ = $1 - $3;
     }
     | FloatExpr TOK_MUL FloatExpr  {
-        printf("multiplying %f and %f\n", $1, $3); 
+        if(DEBUGY)printf("multiplying %f and %f\n", $1, $3); 
         $$ = $1 * $3;
     }
     | FloatExpr TOK_DIV FloatExpr  {
-        printf("dividing %f and %f\n", $1, $3); 
+        if(DEBUGY)printf("dividing %f and %f\n", $1, $3); 
         $$ = $1 / $3;
     }
     | TOK_FLOAT {
-        printf("float %f\n", $1); 
+        if(DEBUGY)printf("float %f\n", $1); 
         $$ = $1;
     }
     | TOK_ID { 
-        printf("id %s\n", $1); 
-        $$ = get_var($1);
+        if(DEBUGY)printf("id %s = %f\n", $1, get_var($1).float_value); 
+        $$ = get_var($1).float_value;
     }
 
 IntExpr:
     IntExpr TOK_ADD IntExpr  {
-        printf("adding %d and %d\n", $1, $3); 
+        if(DEBUGY)printf("adding %d and %d\n", $1, $3); 
         $$ = $1 + $3;
     }
     | IntExpr TOK_SUB IntExpr  {
-        printf("subtracting %d and %d\n", $1, $3); 
+        if(DEBUGY)printf("subtracting %d and %d\n", $1, $3); 
         $$ = $1 - $3;
     }
-    | IntExpr TOK_MUL IntExpr  
-    {
-        printf("multiplying %d and %d\n", $1, $3); 
+    | IntExpr TOK_MUL IntExpr    {
+        if(DEBUGY)printf("multiplying %d and %d\n", $1, $3); 
         $$ = $1 * $3;
     }
-    | IntExpr TOK_DIV IntExpr  
-    {
-        printf("dividing %d and %d\n", $1, $3); 
+    | IntExpr TOK_DIV IntExpr  {
+        if(DEBUGY)printf("dividing %d and %d\n", $1, $3); 
         $$ = $1 / $3;
     }
     | TOK_INT {
-        printf("int %d\n", $1); 
+        if(DEBUGY)printf("int %d\n", $1); 
         $$ = $1;
     }
     | TOK_ID { 
-        printf("id %s\n", $1); 
-        $$ = get_var($1);
+        if(DEBUGY)printf("id %s = %d\n", $1,get_var($1).int_value);
+        $$ = get_var($1).int_value;
     }
     
 
