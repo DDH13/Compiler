@@ -10,8 +10,8 @@
 "int" {sscanf(yytext, "%s", yylval.id); return(TOK_TYPE);}
 "float" {sscanf(yytext, "%s", yylval.id); return(TOK_TYPE);}
 ";" { return(TOK_SEMI);}
-[0-9]+ { sscanf(yytext, "%f", &(yylval.both)); return(TOK_INT);}
-[0-9]\.[0-9]+ { sscanf(yytext, "%f", &(yylval.both)); return(TOK_FLOAT);}
+[0-9]+ { sscanf(yytext, "%d", &(yylval.int_val)); return(TOK_INT);}
+[0-9]\.[0-9]+ { sscanf(yytext, "%f", &(yylval.float_val)); return(TOK_FLOAT);}
 printvar { return(TOK_PRINTVAR);}
 [a-z][a-z0-9]* {sscanf(yytext, "%s", yylval.id);  return(TOK_ID);}
 "+" { return(TOK_ADD);}

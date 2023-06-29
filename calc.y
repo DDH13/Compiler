@@ -109,10 +109,13 @@
 %token TOK_ADD TOK_SUB TOK_MUL TOK_DIV TOK_EQ TOK_SEMI TOK_FLOAT TOK_INT TOK_PRINTVAR TOK_TYPE TOK_MAIN TOK_ID TOK_LBRACE TOK_RBRACE
 %union {
     char id[50];
-    float both; //0 for int, 1 for float
+    int int_val;
+    float float_val;
 }
+
 %type <id> TOK_ID TOK_TYPE
-%type <both> Expr AssignStmt TOK_INT TOK_FLOAT
+%type <int_val> IntExpr IntAssignStmt TOK_INT
+%type <float_val> FloatExpr FloatAssignStmt TOK_FLOAT
 
 %left TOK_ADD TOK_SUB
 %left TOK_MUL TOK_DIV
@@ -123,18 +126,89 @@ Stmts: Stmt Stmts | Stmt
 Stmt:  
     DclStmt 
     | PrintStmt 
-    | AssignStmt 
-    | Expr 
-DclStmt: TOK_TYPE TOK_ID TOK_SEMI{printf("declaring %s as %s\n", $2, $1); declare_var($2, $1); print_list();}
-AssignStmt: TOK_ID TOK_EQ Expr TOK_SEMI{printf("assigning %f to %s\n", $3, $1); assign_var($1, $3); print_list();}
-PrintStmt: TOK_PRINTVAR TOK_ID TOK_SEMI {if(get_type($2)==1) printf("%f\n", get_var($2)); else printf("%d\n", (int)get_var($2));}
-Expr: 
-    Expr TOK_ADD Expr  {printf("adding %f and %f\n", $1, $3); $$ = $1 + $3;}
-    | Expr TOK_SUB Expr  {printf("subtracting %f and %f\n", $1, $3); $$ = $1 - $3;}
-    | Expr TOK_MUL Expr  {printf("multiplying %f and %f\n", $1, $3); $$ = $1 * $3;}
-    | Expr TOK_DIV Expr  {printf("dividing %f and %f\n", $1, $3); $$ = $1 / $3;}
-    | TOK_INT {printf("int %f\n", $1); $$ = $1;}
-    | TOK_ID { printf("id %s\n", $1); $$ = get_var($1);}
+    | IntAssignStmt 
+    | IntExpr 
+    | FloatAssignStmt
+    | FloatExpr
+
+DclStmt: TOK_TYPE TOK_ID TOK_SEMI{
+        printf("declaring %s as %s\n", $2, $1); 
+        declare_var($2, $1); 
+        print_list();
+    }
+IntAssignStmt: TOK_ID TOK_EQ IntExpr TOK_SEMI{
+        if(get_type($1)==1)
+            {printf("Type Error");
+            return 1;}
+        printf("assigning %d to %s\n", $3, $1); 
+        assign_var($1, $3);
+        print_list();
+    }
+FloatAssignStmt: TOK_ID TOK_EQ FloatExpr TOK_SEMI{
+        if(get_type($1)==0)
+            {printf("Type Error");
+            return 1;}
+        printf("assigning %f to %s\n", $3, $1); 
+        assign_var($1, $3);
+        print_list();
+    }
+PrintStmt: TOK_PRINTVAR TOK_ID TOK_SEMI {
+        if(get_type($2)==1) printf("%f\n", get_var($2));
+        else printf("%d\n", (int)get_var($2));
+    }
+FloatExpr: 
+    FloatExpr TOK_ADD FloatExpr  {
+        printf("adding %f and %f\n", $1, $3); 
+        $$ = $1 + $3;
+    }
+    | FloatExpr TOK_SUB FloatExpr  {
+        printf("subtracting %f and %f\n", $1, $3); 
+        $$ = $1 - $3;
+    }
+    | FloatExpr TOK_MUL FloatExpr  {
+        printf("multiplying %f and %f\n", $1, $3); 
+        $$ = $1 * $3;
+    }
+    | FloatExpr TOK_DIV FloatExpr  {
+        printf("dividing %f and %f\n", $1, $3); 
+        $$ = $1 / $3;
+    }
+    | TOK_FLOAT {
+        printf("float %f\n", $1); 
+        $$ = $1;
+    }
+    | TOK_ID { 
+        printf("id %s\n", $1); 
+        $$ = get_var($1);
+    }
+
+IntExpr:
+    IntExpr TOK_ADD IntExpr  {
+        printf("adding %d and %d\n", $1, $3); 
+        $$ = $1 + $3;
+    }
+    | IntExpr TOK_SUB IntExpr  {
+        printf("subtracting %d and %d\n", $1, $3); 
+        $$ = $1 - $3;
+    }
+    | IntExpr TOK_MUL IntExpr  
+    {
+        printf("multiplying %d and %d\n", $1, $3); 
+        $$ = $1 * $3;
+    }
+    | IntExpr TOK_DIV IntExpr  
+    {
+        printf("dividing %d and %d\n", $1, $3); 
+        $$ = $1 / $3;
+    }
+    | TOK_INT {
+        printf("int %d\n", $1); 
+        $$ = $1;
+    }
+    | TOK_ID { 
+        printf("id %s\n", $1); 
+        $$ = get_var($1);
+    }
     
 
 %%
