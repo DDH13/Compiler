@@ -126,7 +126,7 @@ Stmt:
     | AssignStmt 
     | Expr 
 DclStmt: TOK_TYPE TOK_ID TOK_SEMI{printf("declaring %s as %s\n", $2, $1); declare_var($2, $1); print_list();}
-AssignStmt: TOK_ID TOK_EQ TOK_INT TOK_SEMI{printf("assigning %f to %s\n", $3, $1); assign_var($1, $3); print_list();}
+AssignStmt: TOK_ID TOK_EQ Expr TOK_SEMI{printf("assigning %f to %s\n", $3, $1); assign_var($1, $3); print_list();}
 PrintStmt: TOK_PRINTVAR TOK_ID TOK_SEMI {if(get_type($2)==1) printf("%f\n", get_var($2)); else printf("%d\n", (int)get_var($2));}
 Expr: 
     Expr TOK_ADD Expr  {printf("adding %f and %f\n", $1, $3); $$ = $1 + $3;}

@@ -34,6 +34,7 @@ printvar { return(TOK_PRINTVAR);}
 // "}" {printf("<RBrace>\n"); return(TOK_RBRACE);}
 // "int" {sscanf(yytext, "%s", yylval.id);printf("<Int>\n"); return(TOK_TYPE);}
 // "float" {sscanf(yytext, "%s", yylval.id);printf("<Float>\n"); return(TOK_TYPE);}
+// ";" {printf("<Semi>\n"); return(TOK_SEMI);}
 // [0-9]+ { sscanf(yytext, "%f", &(yylval.both)); printf("<Int>: %s\n", yytext); return(TOK_INT);}
 // [0-9]\.[0-9]+ { sscanf(yytext, "%f", &(yylval.both));printf("<Float>: %s\n", yytext); return(TOK_FLOAT);}
 // printvar {printf("<Printvar>\n"); return(TOK_PRINTVAR);}
@@ -43,6 +44,5 @@ printvar { return(TOK_PRINTVAR);}
 // "*" {printf("<Mul>\n"); return(TOK_MUL);}
 // "/" {printf("<Div>\n"); return(TOK_DIV);}
 // "=" {printf("<Eq>\n"); return(TOK_EQ);}
-// ";" {printf("<Semi>\n"); return(TOK_SEMI);}
 // [ \n] ;
 // [ \t] ;
