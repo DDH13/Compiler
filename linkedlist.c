@@ -1,6 +1,6 @@
-    #include <stdio.h>
-    #include <stdlib.h>
-    #include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
     // a linked list of variable names and values
     typedef struct var {
@@ -12,7 +12,6 @@
 
     //HEAD pointer for the linked list of variables
     var* head = NULL;
-
     // a function to add a variable to the linked list
     void add_var(char* name, float value, int type) {
         var* new_var = malloc(sizeof(var));
@@ -28,6 +27,7 @@
     void declare_var(char* name, char* type) {
         var* current = head;
         while (current != NULL) {
+            printf("comparing %s and %s\n", current->name, name);
             if (strcmp(current->name, name) == 0) {
                 printf("Error: variable %s already declared\n", name);
                 return;
@@ -36,9 +36,11 @@
         }
         if (strcmp(type, "int") == 0) {
             add_var(name, 0, 0);
+            printf("added %s as %s\n", name, type);
         }
         else if (strcmp(type, "float") == 0) {
             add_var(name, 0, 1);
+            printf("added %s as %s\n", name, type);
         }
         else {
             printf("Error: invalid type %s\n", type);
@@ -86,25 +88,19 @@
 
     // a function to print the list nicely name,value,type
     void print_list() {
-        printf("name, value, type\n");
         var* current = head;
         while (current != NULL) {
-            // if (current->value && current->type && current->name)
             printf("%s, %f, %d\n", current->name, current->value, current->type);
-            // else if (current->type && current->name)
-            // printf("%s, %d\n", current->name, current->type);
             current = current->next;
         }
     }
-
-
-
- int main() {
+int main()
+{
     declare_var("x", "int");
     declare_var("y", "float");
     declare_var("z", "int");
     declare_var("x", "int"); // Duplicate declaration
-
+    print_list();
     assign_var("x", 5);
     assign_var("y", 3.14);
     assign_var("z", 10);

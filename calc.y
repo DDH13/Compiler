@@ -31,6 +31,7 @@
     void declare_var(char* name, char* type) {
         var* current = head;
         while (current != NULL) {
+            printf("comparing %s and %s\n", current->name, name);
             if (strcmp(current->name, name) == 0) {
                 printf("Error: variable %s already declared\n", name);
                 return;
@@ -39,9 +40,11 @@
         }
         if (strcmp(type, "int") == 0) {
             add_var(name, 0, 0);
+            printf("added %s as %s\n", name, type);
         }
         else if (strcmp(type, "float") == 0) {
             add_var(name, 0, 1);
+            printf("added %s as %s\n", name, type);
         }
         else {
             printf("Error: invalid type %s\n", type);
@@ -89,13 +92,14 @@
 
     // a function to print the list nicely name,value,type
     void print_list() {
-        printf("name, value, type\n");
         var* current = head;
+        if (current == NULL) {
+            printf("List is empty\n");
+            return;
+        }
+        printf("name\tvalue\ttype\n");
         while (current != NULL) {
-            if (current->value && current->type && current->name)
-            printf("%s, %f, %d\n", current->name, current->value, current->type);
-            else if (current->type && current->name)
-            printf("%s, %d\n", current->name, current->type);
+            printf("%s\t%.2f\t%d\n", current->name, current->value, current->type);
             current = current->next;
         }
     }
@@ -104,7 +108,7 @@
 
 %token TOK_ADD TOK_SUB TOK_MUL TOK_DIV TOK_EQ TOK_SEMI TOK_FLOAT TOK_INT TOK_PRINTVAR TOK_TYPE TOK_MAIN TOK_ID TOK_LBRACE TOK_RBRACE
 %union {
-    char* id;
+    char id[50];
     float both; //0 for int, 1 for float
 }
 %type <id> TOK_ID TOK_TYPE
@@ -115,21 +119,22 @@
 
 %%
 Program: TOK_MAIN TOK_LBRACE Stmts TOK_RBRACE
-Stmts: Stmt TOK_SEMI Stmts | TOK_SEMI
+Stmts: Stmt Stmts | Stmt
 Stmt:  
     DclStmt 
     | PrintStmt 
     | AssignStmt 
     | Expr 
-DclStmt: TOK_TYPE TOK_ID {printf("declaring %s as %s\n", $2, $1); }
-PrintStmt: TOK_PRINTVAR TOK_ID 
-AssignStmt: TOK_ID TOK_EQ Expr {printf("assigning %f to %s\n", $3, $1);}
+DclStmt: TOK_TYPE TOK_ID TOK_SEMI{printf("declaring %s as %s\n", $2, $1); declare_var($2, $1); print_list();}
+AssignStmt: TOK_ID TOK_EQ TOK_INT TOK_SEMI{printf("assigning %f to %s\n", $3, $1); assign_var($1, $3); print_list();}
+PrintStmt: TOK_PRINTVAR TOK_ID TOK_SEMI {if(get_type($2)==1) printf("%f\n", get_var($2)); else printf("%d\n", (int)get_var($2));}
 Expr: 
-    Expr TOK_ADD Expr {printf("adding %f and %f\n", $1, $3); $$ = $1 + $3;}
-    | Expr TOK_SUB Expr {printf("subtracting %f and %f\n", $1, $3); $$ = $1 - $3;}
-    | Expr TOK_MUL Expr {printf("multiplying %f and %f\n", $1, $3); $$ = $1 * $3;}
-    | Expr TOK_DIV Expr {printf("dividing %f and %f\n", $1, $3); $$ = $1 / $3;}
+    Expr TOK_ADD Expr  {printf("adding %f and %f\n", $1, $3); $$ = $1 + $3;}
+    | Expr TOK_SUB Expr  {printf("subtracting %f and %f\n", $1, $3); $$ = $1 - $3;}
+    | Expr TOK_MUL Expr  {printf("multiplying %f and %f\n", $1, $3); $$ = $1 * $3;}
+    | Expr TOK_DIV Expr  {printf("dividing %f and %f\n", $1, $3); $$ = $1 / $3;}
     | TOK_INT {printf("int %f\n", $1); $$ = $1;}
+    | TOK_ID { printf("id %s\n", $1); $$ = get_var($1);}
     
 
 %%
