@@ -1,36 +1,136 @@
 %{
     #include <stdio.h>
     #include <stdlib.h>
+    #include <string.h>
     extern FILE* yyin;
-extern int yylex();
+    extern int yylex();
+    
+    // a linked list of variable names and values
+    typedef struct var {
+        int type; //0 for int, 1 for float
+        char* name;
+        float value;
+        struct var* next;
+    } var;
+
+    //HEAD pointer for the linked list of variables
+    var* head = NULL;
+
+    // a function to add a variable to the linked list
+    void add_var(char* name, float value, int type) {
+        var* new_var = malloc(sizeof(var));
+        new_var->name = malloc(strlen(name) + 1);
+        strcpy(new_var->name, name);
+        new_var->value = value;
+        new_var->type = type;
+        new_var->next = head;
+        head = new_var;
+    }
+
+    //a function to declare a variable
+    void declare_var(char* name, char* type) {
+        var* current = head;
+        while (current != NULL) {
+            if (strcmp(current->name, name) == 0) {
+                printf("Error: variable %s already declared\n", name);
+                return;
+            }
+            current = current->next;
+        }
+        if (strcmp(type, "int") == 0) {
+            add_var(name, 0, 0);
+        }
+        else if (strcmp(type, "float") == 0) {
+            add_var(name, 0, 1);
+        }
+        else {
+            printf("Error: invalid type %s\n", type);
+            return;
+        }
+    }
+    
+    // a function to assign a value to a declared variable
+    int assign_var(char* name, float value) {
+        var* current = head;
+        while (current != NULL) {
+            if (strcmp(current->name, name) == 0) {
+                current->value = value;
+                return 0;
+            }
+            current = current->next;
+        }
+        printf("Error: variable %s not declared\n", name);
+        return 1;
+    }
+
+    // a function to get the value of a variable
+    float get_var(char* name) {
+        var* current = head;
+        while (current != NULL) {
+            if (strcmp(current->name, name) == 0) {
+                return current->value;
+            }
+            current = current->next;
+        }
+        return -1;
+    }
+
+    // a function to check if a variable is an int or a float
+    int get_type(char* name) {
+        var* current = head;
+        while (current != NULL) {
+            if (strcmp(current->name, name) == 0) {
+                return current->type;
+            }
+            current = current->next;
+        }
+        return -1;
+    }
+
+    // a function to print the list nicely name,value,type
+    void print_list() {
+        printf("name, value, type\n");
+        var* current = head;
+        while (current != NULL) {
+            if (current->value && current->type && current->name)
+            printf("%s, %f, %d\n", current->name, current->value, current->type);
+            else if (current->type && current->name)
+            printf("%s, %d\n", current->name, current->type);
+            current = current->next;
+        }
+    }
+
 %}
 
-%token TOK_ADD TOK_SUB TOK_MUL TOK_DIV TOK_EQ TOK_SEMI TOK_FLOAT TOK_INT TOK_PRINTVAR TOK_INT_TYPE TOK_FLOAT_TYPE TOK_MAIN TOK_ID TOK_LBRACE TOK_RBRACE
+%token TOK_ADD TOK_SUB TOK_MUL TOK_DIV TOK_EQ TOK_SEMI TOK_FLOAT TOK_INT TOK_PRINTVAR TOK_TYPE TOK_MAIN TOK_ID TOK_LBRACE TOK_RBRACE
 %union {
-    int int_val;
-    float float_val;
-    char* string_val;
+    char* id;
+    float both; //0 for int, 1 for float
 }
-%type <int_val> E
-%type <int_val> TOK_ID
+%type <id> TOK_ID TOK_TYPE
+%type <both> Expr AssignStmt TOK_INT TOK_FLOAT
 
 %left TOK_ADD TOK_SUB
 %left TOK_MUL TOK_DIV
 
 %%
-Prog: TOK_MAIN TOK_LBRACE Stmts TOK_RBRACE
-Stmts: Stmt TOK_SEMI Stmts | ;
-Stmt: 
-TOK_INT_TYPE TOK_ID 
-| TOK_FLOAT_TYPE TOK_ID 
-| TOK_ID TOK_EQ E 
-| TOK_PRINTVAR TOK_ID { printf("%d\n", $2); }
-E: 
-TOK_INT 
-| TOK_FLOAT 
-| TOK_ID 
-| E TOK_ADD E {$$=$1+$3;}
-| E TOK_SUB E {$$=$1-$3;}
+Program: TOK_MAIN TOK_LBRACE Stmts TOK_RBRACE
+Stmts: Stmt TOK_SEMI Stmts | TOK_SEMI
+Stmt:  
+    DclStmt 
+    | PrintStmt 
+    | AssignStmt 
+    | Expr 
+DclStmt: TOK_TYPE TOK_ID {printf("declaring %s as %s\n", $2, $1); }
+PrintStmt: TOK_PRINTVAR TOK_ID 
+AssignStmt: TOK_ID TOK_EQ Expr {printf("assigning %f to %s\n", $3, $1);}
+Expr: 
+    Expr TOK_ADD Expr {printf("adding %f and %f\n", $1, $3); $$ = $1 + $3;}
+    | Expr TOK_SUB Expr {printf("subtracting %f and %f\n", $1, $3); $$ = $1 - $3;}
+    | Expr TOK_MUL Expr {printf("multiplying %f and %f\n", $1, $3); $$ = $1 * $3;}
+    | Expr TOK_DIV Expr {printf("dividing %f and %f\n", $1, $3); $$ = $1 / $3;}
+    | TOK_INT {printf("int %f\n", $1); $$ = $1;}
+    
 
 %%
 int yyerror(char *s) {
