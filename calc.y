@@ -5,6 +5,8 @@
     extern FILE* yyin;
     extern int yylex();
     int DEBUGY = 1;
+    extern int yylineno;
+
     
     typedef union ValueUnion {
         int int_value;
@@ -126,6 +128,7 @@
     }
 
 %}
+%locations
 
 %token TOK_ADD TOK_SUB TOK_MUL TOK_DIV TOK_EQ TOK_SEMI TOK_FLOAT TOK_INT TOK_PRINTVAR TOK_TYPE TOK_MAIN TOK_ID TOK_LBRACE TOK_RBRACE
 %union {

@@ -3,7 +3,7 @@
 #include "calc.tab.h"
 int DEBUGL = 0;
 %}
-
+%option yylineno
 %%
 
 "main()" {if(DEBUGL)printf("<Main>\n"); return(TOK_MAIN);}
@@ -21,7 +21,7 @@ printvar {if(DEBUGL)printf("<Printvar>\n"); return(TOK_PRINTVAR);}
 "*" {if(DEBUGL)printf("<Mul>\n"); return(TOK_MUL);}
 "/" {if(DEBUGL)printf("<Div>\n"); return(TOK_DIV);}
 "=" {if(DEBUGL)printf("<Eq>\n"); return(TOK_EQ);}
-[ \n] ;
+[ \n]
 [ \t] ;
 
 %%
