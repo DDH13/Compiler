@@ -4,7 +4,7 @@
     #include <string.h>
     extern FILE* yyin;
     extern int yylex();
-    int DEBUGY = 1;
+    int DEBUGY = 0;
     extern int yylineno;
 
     
@@ -158,7 +158,7 @@ Stmt:
 DclStmt: TOK_TYPE TOK_ID TOK_SEMI {
     if(DEBUGY)printf("declaring %s as %s\n", $2, $1); 
         declare_var($2, $1); 
-        print_list();
+    if(DEBUGY)print_list();
     }
 IntAssignStmt: TOK_ID TOK_EQ IntExpr TOK_SEMI {
         if(get_type($1)==1) {printf("Type Error");return 1;}
@@ -166,7 +166,7 @@ IntAssignStmt: TOK_ID TOK_EQ IntExpr TOK_SEMI {
         ValueUnion tempstruct;
         tempstruct.int_value = $3;
         assign_var($1, tempstruct);
-        print_list();
+        if(DEBUGY)print_list();
     }
 FloatAssignStmt: TOK_ID TOK_EQ FloatExpr TOK_SEMI {
         if(get_type($1)==0) {printf("Type Error");return 1;}
@@ -174,11 +174,36 @@ FloatAssignStmt: TOK_ID TOK_EQ FloatExpr TOK_SEMI {
         tempstruct.float_value = $3;
         if(DEBUGY)printf("assigning %f to %s\n", $3, $1); 
         assign_var($1, tempstruct);
-        print_list();
+        if(DEBUGY)print_list();
     }
 PrintStmt: TOK_PRINTVAR TOK_ID TOK_SEMI {
         if(get_type($2)==1) printf("%f\n", get_var($2).float_value);
         else printf("%d\n", (int)get_var($2).int_value);
+    }
+IntExpr:
+    IntExpr TOK_ADD IntExpr  {
+        if(DEBUGY)printf("adding %d and %d\n", $1, $3); 
+        $$ = $1 + $3;
+    }
+    | IntExpr TOK_SUB IntExpr  {
+        if(DEBUGY)printf("subtracting %d and %d\n", $1, $3); 
+        $$ = $1 - $3;
+    }
+    | IntExpr TOK_MUL IntExpr    {
+        if(DEBUGY)printf("multiplying %d and %d\n", $1, $3); 
+        $$ = $1 * $3;
+    }
+    | IntExpr TOK_DIV IntExpr  {
+        if(DEBUGY)printf("dividing %d and %d\n", $1, $3); 
+        $$ = $1 / $3;
+    }
+    | TOK_INT {
+        if(DEBUGY)printf("int %d\n", $1); 
+        $$ = $1;
+    }
+    | TOK_ID { 
+        if(DEBUGY)printf("id %s = %d\n", $1,get_var($1).int_value);
+        $$ = get_var($1).int_value;
     }
 FloatExpr: 
     FloatExpr TOK_ADD FloatExpr  {
@@ -206,36 +231,11 @@ FloatExpr:
         $$ = get_var($1).float_value;
     }
 
-IntExpr:
-    IntExpr TOK_ADD IntExpr  {
-        if(DEBUGY)printf("adding %d and %d\n", $1, $3); 
-        $$ = $1 + $3;
-    }
-    | IntExpr TOK_SUB IntExpr  {
-        if(DEBUGY)printf("subtracting %d and %d\n", $1, $3); 
-        $$ = $1 - $3;
-    }
-    | IntExpr TOK_MUL IntExpr    {
-        if(DEBUGY)printf("multiplying %d and %d\n", $1, $3); 
-        $$ = $1 * $3;
-    }
-    | IntExpr TOK_DIV IntExpr  {
-        if(DEBUGY)printf("dividing %d and %d\n", $1, $3); 
-        $$ = $1 / $3;
-    }
-    | TOK_INT {
-        if(DEBUGY)printf("int %d\n", $1); 
-        $$ = $1;
-    }
-    | TOK_ID { 
-        if(DEBUGY)printf("id %s = %d\n", $1,get_var($1).int_value);
-        $$ = get_var($1).int_value;
-    }
     
 
 %%
 int yyerror(char *s) {
-    fprintf(stderr, "Error: %s\n", s);
+    fprintf(stderr, "Error: %s\t Line: %d\n", s, yylineno);
     return 0;
 }
 int main(int argc, char **argv) {
