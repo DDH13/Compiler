@@ -46,7 +46,7 @@
         while (current != NULL) {
             // printf("comparing %s and %s\n", current->name, name);
             if (strcmp(current->name, name) == 0) {
-                printf("Error: variable %s already declared\n", name);
+                printf("Line %d: variable %s already declared\n", yylineno,name);
                 return;
             }
             current = current->next;
@@ -61,7 +61,7 @@
             add_var(name, tempstruct, 1);
         }
         else {
-            printf("Error: invalid type %s\n", type);
+            printf("Line %d: invalid type %s\n",yylineno, type);
             return;
         }
     }
@@ -81,7 +81,7 @@
             }
             current = current->next;
         }
-        printf("Error: variable %s not declared\n", name);
+        printf("Line %d: %s is used but not declared\n", yylineno, name);
         return 1;
     }
 
@@ -94,6 +94,10 @@
             }
             current = current->next;
         }
+        // return struct with -1
+        ValueUnion tempstruct;
+        tempstruct.int_value = -1;
+        return tempstruct;
     }
 
     // a function to check if a variable is an int or a float
@@ -157,7 +161,7 @@ Stmt:
 
 DclStmt: TOK_TYPE TOK_ID TOK_SEMI {
     if(DEBUGY)printf("declaring %s as %s\n", $2, $1); 
-        declare_var($2, $1); 
+    declare_var($2, $1); 
     if(DEBUGY)print_list();
     }
 IntAssignStmt: TOK_ID TOK_EQ IntExpr TOK_SEMI {
@@ -235,37 +239,18 @@ FloatExpr:
 
 %%
 int yyerror(char *s) {
-    fprintf(stderr, "Error: %s\t Line: %d\n", s, yylineno);
+    fprintf(stderr, "Line: %d\t %s",yylineno,s);
     return 0;
 }
-int main(int argc, char **argv) {
-    
-    //check for correct number of arguments
-    if (argc != 2) {
-        fprintf(stderr, "Usage: ./calc filename\n");
-        return 1;
-    }
-    
-    // Open the file and set it to yyin
-    char filename[100];
-    snprintf(filename, sizeof(filename), "testcases/%s", argv[1]);
-    yyin = fopen(filename, "r");
-    if (yyin == NULL) {
-        fprintf(stderr, "Error: could not open %s\n", filename);
-        return 1;
-    }
-    printf("Opened %s:\n\n", filename);
-    int c;
-    while ((c = fgetc(yyin)) != EOF) {
-        putchar(c);
-    }
-    printf("\n\n");
-    //reset the file pointer to the beginning of the file
-    fseek(yyin, 0, SEEK_SET);
 
+int main() {
+    // Set the input file as the input source for the parser
+    yyset_in(stdin);
 
-    //call yyparse
+    // Call the parser
     yyparse();
-    return 0;
 
+    return 0;
 }
+
+
