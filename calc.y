@@ -30,10 +30,10 @@
         new_var->name = malloc(strlen(name) + 1);
         strcpy(new_var->name, name);
         if (type == 0) {
-            new_var->value.int_value = (float)value.int_value;
+            new_var->value.int_value = (int)value.int_value;
         }
         else {
-            new_var->value.float_value = (int)value.float_value;
+            new_var->value.float_value = (float)value.float_value;
         }
         new_var->type = type;
         new_var->next = head;
