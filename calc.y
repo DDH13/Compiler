@@ -4,7 +4,7 @@
     #include <string.h>
     extern FILE* yyin;
     extern int yylex();
-    int DEBUGY = 0;
+    int DEBUGY = 1;
     extern int yylineno;
 
     
@@ -47,7 +47,7 @@
             // printf("comparing %s and %s\n", current->name, name);
             if (strcmp(current->name, name) == 0) {
                 printf("Line %d: variable %s already declared\n", yylineno,name);
-                return;
+                exit(1);
             }
             current = current->next;
         }
@@ -62,7 +62,7 @@
         }
         else {
             printf("Line %d: invalid type %s\n",yylineno, type);
-            return;
+            exit(1);
         }
     }
     
@@ -82,7 +82,7 @@
             current = current->next;
         }
         printf("Line %d: %s is used but not declared\n", yylineno, name);
-        return 1;
+        exit(1);
     }
 
     // a function to get the value of a variable
@@ -94,10 +94,8 @@
             }
             current = current->next;
         }
-        // return struct with -1
-        ValueUnion tempstruct;
-        tempstruct.int_value = -1;
-        return tempstruct;
+        printf("Line %d: %s is used but not declared\n", yylineno, name);
+        exit(1);
     }
 
     // a function to check if a variable is an int or a float
@@ -109,7 +107,7 @@
             }
             current = current->next;
         }
-        return -1;
+        exit(1);
     }
 
     // a function to print the list nicely name,value,type
@@ -239,7 +237,7 @@ FloatExpr:
 
 %%
 int yyerror(char *s) {
-    fprintf(stderr, "Line: %d\t %s",yylineno,s);
+    fprintf(stderr, "Line: %d\t %s\n",yylineno,s);
     return 0;
 }
 
