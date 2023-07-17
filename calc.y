@@ -4,7 +4,7 @@
     #include <string.h>
     extern FILE* yyin;
     extern int yylex();
-    int DEBUGY = 1;
+    int DEBUGY = 0;
     extern int yylineno;
 
     
@@ -68,18 +68,22 @@
     
     // a function to assign a value to a declared variable
     int assign_var(char* name, ValueUnion value) {
+        printf("assigning %s\n", name);
         var* current = head;
         while (current != NULL) {
             if (strcmp(current->name, name) == 0) {
                 if (current->type == 0) {
+                    printf("assigning %d, int to %s\n", value.int_value, name);
                     current->value.int_value = (int)value.int_value;
                 }
                 else if (current->type == 1) {
+                    printf("assigning %f, float to %s\n", value.float_value, name);
                     current->value.float_value = (float)value.float_value;
                 }
                 return 0;
             }
             current = current->next;
+            printf("current = current->next;");
         }
         printf("Line %d: %s is used but not declared\n", yylineno, name);
         exit(1);
@@ -87,9 +91,11 @@
 
     // a function to get the value of a variable
     ValueUnion get_var(char* name) {
+        printf("getting %s\n", name);
         var* current = head;
         while (current != NULL) {
             if (strcmp(current->name, name) == 0) {
+                printf("Variable matched\n");
                 return current->value;
             }
             current = current->next;
@@ -107,6 +113,7 @@
             }
             current = current->next;
         }
+        printf("Line %d: %s is used but not declared\n", yylineno, name);
         exit(1);
     }
 

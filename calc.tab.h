@@ -63,12 +63,11 @@ extern int yydebug;
     TOK_FLOAT = 264,               /* TOK_FLOAT  */
     TOK_INT = 265,                 /* TOK_INT  */
     TOK_PRINTVAR = 266,            /* TOK_PRINTVAR  */
-    TOK_INT_TYPE = 267,            /* TOK_INT_TYPE  */
-    TOK_FLOAT_TYPE = 268,          /* TOK_FLOAT_TYPE  */
-    TOK_MAIN = 269,                /* TOK_MAIN  */
-    TOK_ID = 270,                  /* TOK_ID  */
-    TOK_LBRACE = 271,              /* TOK_LBRACE  */
-    TOK_RBRACE = 272               /* TOK_RBRACE  */
+    TOK_TYPE = 267,                /* TOK_TYPE  */
+    TOK_MAIN = 268,                /* TOK_MAIN  */
+    TOK_ID = 269,                  /* TOK_ID  */
+    TOK_LBRACE = 270,              /* TOK_LBRACE  */
+    TOK_RBRACE = 271               /* TOK_RBRACE  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -77,13 +76,13 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 9 "calc.y"
+#line 143 "calc.y"
 
+    char id[50];
     int int_val;
     float float_val;
-    char* string_val;
 
-#line 87 "calc.tab.h"
+#line 86 "calc.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;
@@ -91,9 +90,23 @@ typedef union YYSTYPE YYSTYPE;
 # define YYSTYPE_IS_DECLARED 1
 #endif
 
+/* Location type.  */
+#if ! defined YYLTYPE && ! defined YYLTYPE_IS_DECLARED
+typedef struct YYLTYPE YYLTYPE;
+struct YYLTYPE
+{
+  int first_line;
+  int first_column;
+  int last_line;
+  int last_column;
+};
+# define YYLTYPE_IS_DECLARED 1
+# define YYLTYPE_IS_TRIVIAL 1
+#endif
+
 
 extern YYSTYPE yylval;
-
+extern YYLTYPE yylloc;
 
 int yyparse (void);
 

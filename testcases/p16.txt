@@ -1,1 +1,1 @@
-main() {int x; x = 3+4;x=x+x;printvar x;}
+main() {x = 3+4;x=x+x;printvar x;}
