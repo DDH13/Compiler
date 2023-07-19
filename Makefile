@@ -11,4 +11,4 @@ lex.yy.c: calc.l
 	flex calc.l
 
 clean:
-	rm -f calc.tab.c calc.tab.h lex.yy.c
+	rm -f calc.tab.c calc.tab.h lex.yy.c calc;

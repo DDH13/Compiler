@@ -4,7 +4,7 @@
     #include <string.h>
     extern FILE* yyin;
     extern int yylex();
-    int DEBUGY = 1;
+    int DEBUGY = 0;
     extern int yylineno;
 
     
@@ -153,9 +153,9 @@ Stmt:
     DclStmt 
     | PrintStmt 
     | IntAssignStmt 
-    | IntExpr 
+    | IntExpr TOK_SEMI
     | FloatAssignStmt
-    | FloatExpr
+    | FloatExpr TOK_SEMI
 
 DclStmt: TOK_TYPE TOK_ID TOK_SEMI {
     if(DEBUGY)printf("declaring %s as %s\n", $2, $1); 
@@ -163,7 +163,7 @@ DclStmt: TOK_TYPE TOK_ID TOK_SEMI {
     if(DEBUGY)print_list();
     }
 IntAssignStmt: TOK_ID TOK_EQ IntExpr TOK_SEMI {
-        if(get_type($1)==1) {printf("Type Error");return 1;}
+        if(get_type($1)==1) {printf("Type Error\n");return 1;}
         if(DEBUGY)printf("assigning %d to %s\n", $3, $1); 
         ValueUnion tempstruct;
         tempstruct.int_value = $3;
@@ -171,7 +171,7 @@ IntAssignStmt: TOK_ID TOK_EQ IntExpr TOK_SEMI {
         if(DEBUGY)print_list();
     }
 FloatAssignStmt: TOK_ID TOK_EQ FloatExpr TOK_SEMI {
-        if(get_type($1)==0) {printf("Type Error");return 1;}
+        if(get_type($1)==0) {printf("Type Error\n");return 1;}
         ValueUnion tempstruct;
         tempstruct.float_value = $3;
         if(DEBUGY)printf("assigning %f to %s\n", $3, $1); 
@@ -182,6 +182,8 @@ PrintStmt: TOK_PRINTVAR TOK_ID TOK_SEMI {
         if(get_type($2)==1) printf("%f\n", get_var($2).float_value);
         else printf("%d\n", (int)get_var($2).int_value);
     }
+    | TOK_PRINTVAR IntExpr TOK_SEMI {printf("%d\n", $2);}
+    | TOK_PRINTVAR FloatExpr TOK_SEMI {printf("%f\n", $2);}
 IntExpr:
     IntExpr TOK_ADD IntExpr  {
         if(DEBUGY)printf("adding %d and %d\n", $1, $3); 
@@ -245,8 +247,23 @@ int main() {
     // Set the input file as the input source for the parser
     yyset_in(stdin);
 
+    //print file contents
+    if (DEBUGY) {
+        printf("File contents:\n");
+        char c;
+        while ((c = fgetc(yyin)) != EOF) {
+            printf("%c", c);
+        }
+        rewind(yyin);
+        printf("\n\n");
+    }
+
     // Call the parser
     yyparse();
+
+    //print out the list of variables
+    if (DEBUGY) {printf("\nFinal symbol table\n");print_list();}
+
 
     return 0;
 }
