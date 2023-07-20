@@ -10,8 +10,3 @@ Run "make" command in the terminal to compile the code
 
 ## How to run the code?
 Run "./calc < [filename]" command in the terminal to run the code
-
-
-
-
-bison -d calc.y; flex calc.l; gcc -o calc calc.tab.c lex.yy.c -lfl; ./calc
