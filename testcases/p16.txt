@@ -1,7 +1,7 @@
 main() {
 int x;
 
-x = 5+8;
+x = [5+8];
 
 printvar x;
 }
