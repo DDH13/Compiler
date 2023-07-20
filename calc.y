@@ -4,7 +4,7 @@
     #include <string.h>
     extern FILE* yyin;
     extern int yylex();
-    int DEBUGY = 1;
+    int DEBUGY = 0;
     extern int yylineno;
 %}
 %locations
@@ -47,39 +47,49 @@
     //HEAD pointer for the linked list of variables
     var* head = NULL;
 
-    // a function to add a variable to the linked list
-    void add_var(char* name, Num num) {
-        var* new_var = malloc(sizeof(var));
-        new_var->name = malloc(strlen(name) + 1);
-        strcpy(new_var->name, name);
-        if (num.type == 0) {
-            new_var->number.value.int_value = num.value.int_value;
-        }
-        else if (num.type == 1) {
-            new_var->number.value.float_value = num.value.float_value;
-        }
-    }
-
     //a function to declare a variable
     void declare_var(char* name, char* type) {
+
+        //check if the variable is already declared 
         var* current = head;
         while (current != NULL) {
             if (strcmp(current->name, name) == 0) {
-                printf("Line %d: variable %s already declared\n", yylineno,name);
+                printf("Line %d: %s is already declared\n", yylineno, name);
                 exit(1);
             }
             current = current->next;
         }
-        //use add_var to add the variable to the list
-        Num tempstruct;
+
+        //allocate memory for the new variable
+        var* temp = malloc(sizeof(var));
+        temp->name = malloc(strlen(name) + 1);
+        strcpy(temp->name, name);
         if (strcmp(type, "int") == 0) {
-            tempstruct.type = 0;
+            temp->number.type = 0;
         }
         else if (strcmp(type, "float") == 0) {
-            tempstruct.type = 1;
+            temp->number.type = 1;
         }
-        add_var(name, tempstruct);
-        
+        else {
+            printf("Line %d: Type Error\n", yylineno);
+            exit(1);
+        }
+        temp->next = NULL;
+
+        //add the new variable to the list
+        if (head == NULL) {
+            head = temp;
+        }
+        else {
+            var* current = head;
+            while (current->next != NULL) {
+                current = current->next;
+            }
+            current->next = temp;
+        }
+
+
+
     }
     
     // a function to assign a value to a declared variable
@@ -102,11 +112,14 @@
     }
 
     // a function to get the value of a variable
-    Val get_var(char* name) {
+    Num get_var(char* name) {
         var* current = head;
+        Num tempstruct;
         while (current != NULL) {
             if (strcmp(current->name, name) == 0) {
-                return current->number.value;
+                tempstruct.type = current->number.type;
+                tempstruct.value = current->number.value;
+                return tempstruct;
             }
             current = current->next;
         }
@@ -123,6 +136,7 @@
             }
             current = current->next;
         }
+        printf("Line %d: %s is used but not declared\n", yylineno, name);
         exit(1);
     }
 
@@ -240,6 +254,7 @@ Stmt:
 DclStmt: TOK_TYPE TOK_ID TOK_SEMI {
     if(DEBUGY)printf("declaring %s as %s\n", $2, $1); 
     declare_var($2, $1); 
+    printf("declared %s as %s\n", $2, $1);
     if(DEBUGY)print_list();
     }
 AssignStmt: TOK_ID TOK_EQ Expr TOK_SEMI {
@@ -253,10 +268,7 @@ AssignStmt: TOK_ID TOK_EQ Expr TOK_SEMI {
         if(DEBUGY)print_list();
     }
 
-PrintStmt: TOK_PRINTVAR TOK_ID TOK_SEMI {
-        if(get_type($2)==1) printf("%f\n", get_var($2).float_value);
-        else printf("%d\n", (int)get_var($2).int_value);
-    }
+PrintStmt: TOK_PRINTVAR TOK_ID TOK_SEMI {print_num(get_var($2));}
     | TOK_PRINTVAR Expr TOK_SEMI {print_num($2);}
 
 Expr:
@@ -277,13 +289,13 @@ Expr:
         Num temp;
         if (get_type($1) == 0) {
             temp.type = 0;
-            temp.value.int_value = 0;
+            temp.value.int_value = get_var($1).value.int_value;
             if(DEBUGY)printf("id %s = %d\n", $1,temp.value.int_value);
             $$ = temp;
         }
         else if (get_type($1) == 1) {
             temp.type = 1;
-            temp.value.float_value = 0;
+            temp.value.float_value = get_var($1).value.float_value;
             if(DEBUGY)printf("id %s = %f\n", $1,temp.value.float_value);
             $$ = temp;
         }
