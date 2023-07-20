@@ -4,20 +4,43 @@
     #include <string.h>
     extern FILE* yyin;
     extern int yylex();
-    int DEBUGY = 0;
+    int DEBUGY = 1;
     extern int yylineno;
+%}
+%locations
 
-    
-    typedef union ValueUnion {
+%token TOK_ADD TOK_SUB TOK_MUL TOK_DIV TOK_EQ TOK_SEMI TOK_FLOAT TOK_INT TOK_PRINTVAR TOK_TYPE TOK_MAIN TOK_ID TOK_LBRACE TOK_RBRACE
+
+%code requires{
+    //To store the value of a variable either int or float
+    typedef union Val {
         int int_value;
         float float_value;
-    } ValueUnion;
+    } Val;
 
+    //To store the value of a variable and its type
+    typedef struct Num{
+        int type;  //0 for int, 1 for float
+        Val value;
+    } Num;
+
+}
+%union {
+    char id[50];
+    Num number;
+}
+
+%type <id> TOK_ID TOK_TYPE
+%type <number> Expr TOK_INT TOK_FLOAT
+
+%left TOK_ADD TOK_SUB
+%left TOK_MUL TOK_DIV
+
+%{
     // a linked list of variable names and values
     typedef struct var {
-        int type; //0 for int, 1 for float
         char* name;
-        ValueUnion value;
+        Num number;
         struct var* next;
     } var;
 
@@ -25,57 +48,50 @@
     var* head = NULL;
 
     // a function to add a variable to the linked list
-    void add_var(char* name, ValueUnion value, int type) {
+    void add_var(char* name, Num num) {
         var* new_var = malloc(sizeof(var));
         new_var->name = malloc(strlen(name) + 1);
         strcpy(new_var->name, name);
-        if (type == 0) {
-            new_var->value.int_value = (int)value.int_value;
+        if (num.type == 0) {
+            new_var->number.value.int_value = num.value.int_value;
         }
-        else {
-            new_var->value.float_value = (float)value.float_value;
+        else if (num.type == 1) {
+            new_var->number.value.float_value = num.value.float_value;
         }
-        new_var->type = type;
-        new_var->next = head;
-        head = new_var;
     }
 
     //a function to declare a variable
     void declare_var(char* name, char* type) {
         var* current = head;
         while (current != NULL) {
-            // printf("comparing %s and %s\n", current->name, name);
             if (strcmp(current->name, name) == 0) {
                 printf("Line %d: variable %s already declared\n", yylineno,name);
                 exit(1);
             }
             current = current->next;
         }
-        ValueUnion tempstruct;
+        //use add_var to add the variable to the list
+        Num tempstruct;
         if (strcmp(type, "int") == 0) {
-            tempstruct.int_value = -1;
-            add_var(name, tempstruct, 0);
+            tempstruct.type = 0;
         }
         else if (strcmp(type, "float") == 0) {
-            tempstruct.float_value = -1;
-            add_var(name, tempstruct, 1);
+            tempstruct.type = 1;
         }
-        else {
-            printf("Line %d: invalid type %s\n",yylineno, type);
-            exit(1);
-        }
+        add_var(name, tempstruct);
+        
     }
     
     // a function to assign a value to a declared variable
-    int assign_var(char* name, ValueUnion value) {
+    int assign_var(char* name, Val value) {
         var* current = head;
         while (current != NULL) {
             if (strcmp(current->name, name) == 0) {
-                if (current->type == 0) {
-                    current->value.int_value = (int)value.int_value;
+                if (current->number.type == 0) {
+                    current->number.value.int_value = value.int_value;
                 }
-                else if (current->type == 1) {
-                    current->value.float_value = (float)value.float_value;
+                else if (current->number.type == 1) {
+                    current->number.value.float_value = value.float_value;
                 }
                 return 0;
             }
@@ -86,11 +102,11 @@
     }
 
     // a function to get the value of a variable
-    ValueUnion get_var(char* name) {
+    Val get_var(char* name) {
         var* current = head;
         while (current != NULL) {
             if (strcmp(current->name, name) == 0) {
-                return current->value;
+                return current->number.value;
             }
             current = current->next;
         }
@@ -103,7 +119,7 @@
         var* current = head;
         while (current != NULL) {
             if (strcmp(current->name, name) == 0) {
-                return current->type;
+                return current->number.type;
             }
             current = current->next;
         }
@@ -119,32 +135,98 @@
         }
         printf("name\tvalue\ttype\n");
         while (current != NULL) {
-            if (current->type == 0) {
-                printf("%s\t%d\t%d\n", current->name, current->value.int_value, current->type);
+            if (current->number.type == 0) {
+                printf("%s\t%d\t%d\n", current->name, current->number.value.int_value, current->number.type);
             }
             else {
-                printf("%s\t%.2f\t%d\n", current->name, current->value.float_value, current->type);
+                printf("%s\t%.2f\t%d\n", current->name, current->number.value.float_value, current->number.type);
             }
             current = current->next;
         }
     }
 
+    Num add(Num a,Num b){
+        Num temp;
+        if(a.type==0 && b.type==0){
+            temp.type=0;
+            if(DEBUGY)printf("adding %d and %d\n", a.value.int_value, b.value.int_value);
+            temp.value.int_value=a.value.int_value+b.value.int_value;
+        }
+        else if(a.type==1 && b.type==1){
+            temp.type=1;
+            if(DEBUGY)printf("adding %f and %f\n", a.value.float_value, b.value.float_value);
+            temp.value.float_value=a.value.float_value+b.value.float_value;
+        }
+        else{
+            printf("Line %d: Type Error\n", yylineno);
+            exit(1);
+        }
+        return temp;
+    }
+    Num subtract(Num a,Num b){
+        Num temp;
+        if(a.type==0 && b.type==0){
+            temp.type=0;
+            if(DEBUGY)printf("subtracting %d and %d\n", a.value.int_value, b.value.int_value);
+            temp.value.int_value=a.value.int_value-b.value.int_value;
+        }
+        else if(a.type==1 && b.type==1){
+            temp.type=1;
+            if(DEBUGY)printf("subtracting %f and %f\n", a.value.float_value, b.value.float_value);
+            temp.value.float_value=a.value.float_value-b.value.float_value;
+        }
+        else{
+            printf("Line %d: Type Error\n", yylineno);
+            exit(1);
+        }
+        return temp;
+    }
+    Num divide(Num a,Num b){
+        Num temp;
+        if(a.type==0 && b.type==0){
+            temp.type=0;
+            if(DEBUGY)printf("dividing %d and %d\n", a.value.int_value, b.value.int_value);
+            temp.value.int_value=a.value.int_value/b.value.int_value;
+        }
+        else if(a.type==1 && b.type==1){
+            temp.type=1;
+            if(DEBUGY)printf("dividing %f and %f\n", a.value.float_value, b.value.float_value);
+            temp.value.float_value=a.value.float_value/b.value.float_value;
+        }
+        else{
+            printf("Line %d: Type Error\n", yylineno);
+            exit(1);
+        }
+        return temp;
+    }
+    Num multiply(Num a,Num b){
+        Num temp;
+        if(a.type==0 && b.type==0){
+            temp.type=0;
+            if(DEBUGY)printf("multiplying %d and %d\n", a.value.int_value, b.value.int_value);
+            temp.value.int_value=a.value.int_value*b.value.int_value;
+        }
+        else if(a.type==1 && b.type==1){
+            temp.type=1;
+            if(DEBUGY)printf("multiplying %f and %f\n", a.value.float_value, b.value.float_value);
+            temp.value.float_value=a.value.float_value*b.value.float_value;
+        }
+        else{
+            printf("Line %d: Type Error\n", yylineno);
+            exit(1);
+        }
+        return temp;
+    }
+    void print_num(Num a){
+        if(a.type==0){
+            printf("%d\n", a.value.int_value);
+        }
+        else if(a.type==1){
+            printf("%f\n", a.value.float_value);
+        }
+    }
+
 %}
-%locations
-
-%token TOK_ADD TOK_SUB TOK_MUL TOK_DIV TOK_EQ TOK_SEMI TOK_FLOAT TOK_INT TOK_PRINTVAR TOK_TYPE TOK_MAIN TOK_ID TOK_LBRACE TOK_RBRACE
-%union {
-    char id[50];
-    int int_val;
-    float float_val;
-}
-
-%type <id> TOK_ID TOK_TYPE
-%type <int_val> IntExpr IntAssignStmt TOK_INT
-%type <float_val> FloatExpr FloatAssignStmt TOK_FLOAT
-
-%left TOK_ADD TOK_SUB
-%left TOK_MUL TOK_DIV
 
 %%
 Program: TOK_MAIN TOK_LBRACE Stmts TOK_RBRACE
@@ -152,90 +234,60 @@ Stmts: Stmt Stmts | Stmt
 Stmt:  
     DclStmt 
     | PrintStmt 
-    | IntAssignStmt 
-    | IntExpr TOK_SEMI
-    | FloatAssignStmt
-    | FloatExpr TOK_SEMI
+    | AssignStmt 
+    | Expr TOK_SEMI
 
 DclStmt: TOK_TYPE TOK_ID TOK_SEMI {
     if(DEBUGY)printf("declaring %s as %s\n", $2, $1); 
     declare_var($2, $1); 
     if(DEBUGY)print_list();
     }
-IntAssignStmt: TOK_ID TOK_EQ IntExpr TOK_SEMI {
-        if(get_type($1)==1) {printf("Type Error\n");return 1;}
-        if(DEBUGY)printf("assigning %d to %s\n", $3, $1); 
-        ValueUnion tempstruct;
-        tempstruct.int_value = $3;
-        assign_var($1, tempstruct);
+AssignStmt: TOK_ID TOK_EQ Expr TOK_SEMI {
+        if (get_type($1) == 0) {
+            if(DEBUGY)printf("assigning %d to %s\n", $3.value.int_value, $1);
+        }
+        else if (get_type($1) == 1) {
+            if(DEBUGY)printf("assigning %f to %s\n", $3.value.float_value, $1);
+        }
+        assign_var($1, $3.value);
         if(DEBUGY)print_list();
     }
-FloatAssignStmt: TOK_ID TOK_EQ FloatExpr TOK_SEMI {
-        if(get_type($1)==0) {printf("Type Error\n");return 1;}
-        ValueUnion tempstruct;
-        tempstruct.float_value = $3;
-        if(DEBUGY)printf("assigning %f to %s\n", $3, $1); 
-        assign_var($1, tempstruct);
-        if(DEBUGY)print_list();
-    }
+
 PrintStmt: TOK_PRINTVAR TOK_ID TOK_SEMI {
         if(get_type($2)==1) printf("%f\n", get_var($2).float_value);
         else printf("%d\n", (int)get_var($2).int_value);
     }
-    | TOK_PRINTVAR IntExpr TOK_SEMI {printf("%d\n", $2);}
-    | TOK_PRINTVAR FloatExpr TOK_SEMI {printf("%f\n", $2);}
-IntExpr:
-    IntExpr TOK_ADD IntExpr  {
-        if(DEBUGY)printf("adding %d and %d\n", $1, $3); 
-        $$ = $1 + $3;
-    }
-    | IntExpr TOK_SUB IntExpr  {
-        if(DEBUGY)printf("subtracting %d and %d\n", $1, $3); 
-        $$ = $1 - $3;
-    }
-    | IntExpr TOK_MUL IntExpr    {
-        if(DEBUGY)printf("multiplying %d and %d\n", $1, $3); 
-        $$ = $1 * $3;
-    }
-    | IntExpr TOK_DIV IntExpr  {
-        if(DEBUGY)printf("dividing %d and %d\n", $1, $3); 
-        $$ = $1 / $3;
-    }
+    | TOK_PRINTVAR Expr TOK_SEMI {print_num($2);}
+
+Expr:
+    Expr TOK_ADD Expr  {$$ = add($1,$3);}
+    | Expr TOK_SUB Expr {$$ = subtract($1,$3);}
+    | Expr TOK_MUL Expr {$$ = multiply($1,$3);}
+    | Expr TOK_DIV Expr {$$ = divide($1,$3);}
+
     | TOK_INT {
-        if(DEBUGY)printf("int %d\n", $1); 
+        if(DEBUGY)printf("int %d\n", $1.value.int_value); 
         $$ = $1;
-    }
-    | TOK_ID { 
-        if(DEBUGY)printf("id %s = %d\n", $1,get_var($1).int_value);
-        $$ = get_var($1).int_value;
-    }
-FloatExpr: 
-    FloatExpr TOK_ADD FloatExpr  {
-        if(DEBUGY)printf("adding %f and %f\n", $1, $3); 
-        $$ = $1 + $3;
-    }
-    | FloatExpr TOK_SUB FloatExpr  {
-        if(DEBUGY)printf("subtracting %f and %f\n", $1, $3); 
-        $$ = $1 - $3;
-    }
-    | FloatExpr TOK_MUL FloatExpr  {
-        if(DEBUGY)printf("multiplying %f and %f\n", $1, $3); 
-        $$ = $1 * $3;
-    }
-    | FloatExpr TOK_DIV FloatExpr  {
-        if(DEBUGY)printf("dividing %f and %f\n", $1, $3); 
-        $$ = $1 / $3;
     }
     | TOK_FLOAT {
-        if(DEBUGY)printf("float %f\n", $1); 
+        if(DEBUGY)printf("float %f\n", $1.value.float_value);
         $$ = $1;
     }
     | TOK_ID { 
-        if(DEBUGY)printf("id %s = %f\n", $1, get_var($1).float_value); 
-        $$ = get_var($1).float_value;
+        Num temp;
+        if (get_type($1) == 0) {
+            temp.type = 0;
+            temp.value.int_value = 0;
+            if(DEBUGY)printf("id %s = %d\n", $1,temp.value.int_value);
+            $$ = temp;
+        }
+        else if (get_type($1) == 1) {
+            temp.type = 1;
+            temp.value.float_value = 0;
+            if(DEBUGY)printf("id %s = %f\n", $1,temp.value.float_value);
+            $$ = temp;
+        }
     }
-
-    
 
 %%
 int yyerror(char *s) {

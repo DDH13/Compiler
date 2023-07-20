@@ -13,8 +13,8 @@ printvar {if(DEBUGL)printf("<Printvar>\n"); return(TOK_PRINTVAR);}
 "int" {sscanf(yytext, "%s", yylval.id);if(DEBUGL)printf("<Int>\n"); return(TOK_TYPE);}
 "float" {sscanf(yytext, "%s", yylval.id);if(DEBUGL)printf("<Float>\n"); return(TOK_TYPE);}
 ";" {if(DEBUGL)printf("<Semi>\n"); return(TOK_SEMI);}
-[0-9]+ { sscanf(yytext, "%d", &(yylval.int_val)); if(DEBUGL)printf("<Int>: %s\n", yytext); return(TOK_INT);}
-[0-9]\.[0-9]+ { sscanf(yytext, "%f", &(yylval.float_val));if(DEBUGL)printf("<Float>: %s\n", yytext); return(TOK_FLOAT);}
+[0-9]+ { sscanf(yytext, "%d", &yylval.number.value.int_value);yylval.number.type=0; if(DEBUGL)printf("<Int>: %s\n", yytext); return(TOK_INT);}
+[0-9]\.[0-9]+ { sscanf(yytext, "%f", &yylval.number.value.float_value);yylval.number.type=1;if(DEBUGL)printf("<Float>: %s\n", yytext); return(TOK_FLOAT);}
 [a-z][a-z0-9]* {sscanf(yytext, "%s", yylval.id); if(DEBUGL)printf("<ID>: %s\n", yytext); return(TOK_ID);}
 "+" {if(DEBUGL)printf("<Add>\n"); return(TOK_ADD);}
 "-" {if(DEBUGL)printf("<Sub>\n"); return(TOK_SUB);}
