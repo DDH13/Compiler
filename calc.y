@@ -4,7 +4,7 @@
     #include <string.h>
     extern FILE* yyin;
     extern int yylex();
-    int DEBUGY = 0;
+    int DEBUGY = 1;
     extern int yylineno;
 %}
 %locations
@@ -254,15 +254,18 @@ Stmt:
 DclStmt: TOK_TYPE TOK_ID TOK_SEMI {
     if(DEBUGY)printf("declaring %s as %s\n", $2, $1); 
     declare_var($2, $1); 
-    printf("declared %s as %s\n", $2, $1);
     if(DEBUGY)print_list();
     }
 AssignStmt: TOK_ID TOK_EQ Expr TOK_SEMI {
-        if (get_type($1) == 0) {
+        if (get_type($1) == 0 && $3.type == 0) {
             if(DEBUGY)printf("assigning %d to %s\n", $3.value.int_value, $1);
         }
-        else if (get_type($1) == 1) {
+        else if (get_type($1) == 1 && $3.type == 1) {
             if(DEBUGY)printf("assigning %f to %s\n", $3.value.float_value, $1);
+        }
+        else{
+            printf("Line %d: Type Error\n", yylineno);
+            exit(1);
         }
         assign_var($1, $3.value);
         if(DEBUGY)print_list();
