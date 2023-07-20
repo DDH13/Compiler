@@ -1,5 +1,7 @@
 main() {
 int x;
-x = 3+2-1;
-printvar 3+4-x;
+
+x = 5+8;
+
+printvar x;
 }

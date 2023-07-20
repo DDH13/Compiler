@@ -22,6 +22,7 @@ printvar {if(DEBUGL)printf("<Printvar>\n"); return(TOK_PRINTVAR);}
 "/" {if(DEBUGL)printf("<Div>\n"); return(TOK_DIV);}
 "=" {if(DEBUGL)printf("<Eq>\n"); return(TOK_EQ);}
 [ \n]
-[ \t] ;
+[ \t]
+. {printf("Line %d: Syntax error\n", yylineno); exit(1);};
 
 %%
