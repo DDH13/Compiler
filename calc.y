@@ -4,7 +4,7 @@
     #include <string.h>
     extern FILE* yyin;
     extern int yylex();
-    int DEBUGY = 1;
+    int DEBUGY = 0;
     extern int yylineno;
 %}
 %locations
@@ -237,6 +237,10 @@
         }
         else if(a.type==1){
             printf("%f\n", a.value.float_value);
+        }
+        else {
+            printf("Line %d: Type Error\n", yylineno);
+            exit(1);
         }
     }
 
