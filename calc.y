@@ -87,9 +87,6 @@
             }
             current->next = temp;
         }
-
-
-
     }
     
     // a function to assign a value to a declared variable
@@ -136,8 +133,7 @@
             }
             current = current->next;
         }
-        printf("Line %d: Syntax errror\n", yylineno);
-        exit(1);
+        return -1;
     }
 
     // a function to print the list nicely name,value,type
@@ -267,8 +263,12 @@ AssignStmt: TOK_ID TOK_EQ Expr TOK_SEMI {
         else if (get_type($1) == 1 && $3.type == 1) {
             if(DEBUGY)printf("assigning %f to %s\n", $3.value.float_value, $1);
         }
-        else{
+        else if (get_type($1)!=-1 && $3.type!=-1){
             printf("Line %d: Type Error\n", yylineno);
+            exit(1);
+        }
+        else{
+            printf("Line %d: %s is used but not declared\n", yylineno, $1);
             exit(1);
         }
         assign_var($1, $3.value);
@@ -305,6 +305,9 @@ Expr:
             temp.value.float_value = get_var($1).value.float_value;
             if(DEBUGY)printf("id %s = %f\n", $1,temp.value.float_value);
             $$ = temp;
+        }else{
+            printf("Line %d: Syntax Error\n", yylineno);
+            exit(1);
         }
     }
 
