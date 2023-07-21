@@ -22,7 +22,7 @@ int DEBUGL = 0;
 "/" {if(DEBUGL)printf("<Div>\n"); return(TOK_DIV);}
 "=" {if(DEBUGL)printf("<Eq>\n"); return(TOK_EQ);}
 [ \n\t\r ] {if(DEBUGL)printf("<Space>\n"); }
-. {if(DEBUGL)printf("<Unknown>: (%s)\n", yytext);exit(1);}
+. {if(DEBUGL)printf("<Unknown>: (%s)\n", yytext);printf("Invalid Character\n");exit(1);}
 
 
 %%
