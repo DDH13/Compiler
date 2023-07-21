@@ -136,7 +136,7 @@
             }
             current = current->next;
         }
-        printf("Line %d: %s is used but not declared\n", yylineno, name);
+        printf("Line %d: Syntax errror\n", yylineno);
         exit(1);
     }
 
@@ -248,7 +248,7 @@
 
 %%
 Program: TOK_MAIN TOK_LBRACE Stmts TOK_RBRACE
-Stmts: Stmt Stmts | Stmt
+Stmts: Stmt Stmts | 
 Stmt:  
     DclStmt 
     | PrintStmt 
